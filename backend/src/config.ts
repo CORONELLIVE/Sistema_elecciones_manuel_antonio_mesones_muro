@@ -7,6 +7,7 @@ import {professorSchema} from './validation.js';
 const projectRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 export function loadConfig(env = process.env) {
+  const cloud = env.VERCEL === '1' || env.ELECTION_STORAGE === 'blob';
   const production = env.NODE_ENV === 'production';
   const provider = z.enum(['mock', 'api', 'peru-consult', 'dni-local', 'scrall', 'padron']).safeParse(env.DNI_PROVIDER || (production ? 'api' : 'peru-consult'));
   if (!provider.success) throw new Error('DNI_PROVIDER debe ser mock, api, peru-consult, dni-local, scrall o padron.');
@@ -27,7 +28,7 @@ export function loadConfig(env = process.env) {
   if (mode === 'dni-local' && (host !== '127.0.0.1' || proxyHops !== 0)) {
     throw new Error('El modo dni-local requiere HOST=127.0.0.1 y TRUST_PROXY_HOPS=0.');
   }
-  const publicOrigin = env.PUBLIC_ORIGIN || ('http://127.0.0.1:' + port);
+  const publicOrigin = env.PUBLIC_ORIGIN || (env.VERCEL_URL && 'https://' + env.VERCEL_URL) || ('http://127.0.0.1:' + port);
   let parsedOrigin: URL;
   try {
     parsedOrigin = new URL(publicOrigin);
@@ -40,7 +41,7 @@ export function loadConfig(env = process.env) {
   }
 
   const professors = z.array(professorSchema).length(4).parse(
-    JSON.parse(readFileSync(resolve(projectRoot, 'backend/config/profesores.json'), 'utf8')),
+    JSON.parse(readFileSync(resolve(cloud ? process.cwd() : projectRoot, 'backend/config/profesores.json'), 'utf8')),
   );
   if (new Set(professors.map(professor => professor.id)).size !== professors.length) {
     throw new Error('Los identificadores de los profesores deben ser únicos.');
@@ -52,9 +53,9 @@ export function loadConfig(env = process.env) {
     throw new Error('VOTES_FILE debe estar fuera de la carpeta pública.');
   }
   return {
-    production, mode, port, proxyHops, password, hmacKey, professors,
+    cloud, production, mode, port, proxyHops, password, hmacKey, professors,
     host,
-    allowedOrigins: production ? [publicOrigin] : [publicOrigin, 'http://127.0.0.1:5173', 'http://localhost:5173'],
+    allowedOrigins: production ? [...new Set([publicOrigin, env.VERCEL_URL && 'https://' + env.VERCEL_URL].filter(Boolean))] : [publicOrigin, 'http://127.0.0.1:5173', 'http://localhost:5173'],
     votesFile, staticDir, candidatesFile: resolve(dirname(votesFile), mode === 'mock' ? 'candidatos.mock.json' : 'candidatos.json'), rosterFile: resolve(projectRoot, 'backend/data/padron.json'),
   };
 }

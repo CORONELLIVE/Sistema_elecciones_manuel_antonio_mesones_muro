@@ -160,9 +160,9 @@ export function Admin() {
         <div className="results-grid">
           {data.resultados.map((item, index) => <button key={item.id} className="result-card"
             aria-pressed={String(item.id) === professor} onClick={() => selectProfessor(professor === String(item.id) ? '' : String(item.id))}>
-            <span className="result-name">{item.nombre}{item.retirado && ' (retirado)'}<ArrowDown size={15}/></span>
+            <span className="result-name">{item.fotoUrl && <img className="result-photo" src={item.fotoUrl} alt=""/>}<span>{item.nombre}{item.retirado && ' (retirado)'}</span><ArrowDown size={15}/></span>
             <span className="result-count">{item.votos} <small>{item.votos === 1 ? 'voto' : 'votos'}</small></span>
-            <span className="result-chart"><progress data-tone={index} max={100} value={item.porcentaje} aria-label={'Porcentaje de ' + item.nombre}/><span>{percentage(item.porcentaje)}</span></span>
+            <span className="result-chart"><progress data-tone={index % 4} max={100} value={item.porcentaje} aria-label={'Porcentaje de ' + item.nombre}/><span>{percentage(item.porcentaje)}</span></span>
           </button>)}
         </div>
       </section>

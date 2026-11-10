@@ -2,6 +2,7 @@ import {createCipheriv, createHmac, randomBytes, randomUUID} from 'node:crypto';
 import {mkdir, open, readFile, rename, rm} from 'node:fs/promises';
 import {dirname} from 'node:path';
 import {z} from 'zod';
+import {privateChange, privateSnapshot} from './private-store.js';
 import {duplicateVote, HttpError} from '../errors.js';
 import {namesSchema, professorSchema, type Names} from '../validation.js';
 
@@ -29,7 +30,7 @@ const votesSchema = z.strictObject({
 });
 type Votes = z.infer<typeof votesSchema>;
 
-export function makeVoteStore(file: string, secret: string, professors: {has(id: number): boolean; isActive(id: number): boolean}) {
+export function makeVoteStore(file: string, secret: string, professors: {isActive(id: number): Promise<boolean>}, cloud = false) {
   const encryptionKey = createHmac('sha256', Buffer.from(secret, 'hex')).update('votos:dni:cifrado:v1').digest();
   function encryptDni(dni: string) {
     const nonce = randomBytes(12);
@@ -40,11 +41,7 @@ export function makeVoteStore(file: string, secret: string, professors: {has(id:
   let pending = Promise.resolve();
 
   async function read() {
-    const data = votesSchema.parse(JSON.parse(await readFile(file, 'utf8')));
-    if (data.votos.some(vote => !professors.has(vote.profesorId))) {
-      throw new Error('Hay votos asociados a profesores que no existen en la configuración.');
-    }
-    return data;
+    return votesSchema.parse(cloud ? (await privateSnapshot('votos.json'))?.data : JSON.parse(await readFile(file, 'utf8')));
   }
 
   async function write(data: Votes) {
@@ -69,8 +66,19 @@ export function makeVoteStore(file: string, secret: string, professors: {has(id:
     return operation;
   }
 
+  function change<Result>(mutate: (data: Votes) => Promise<Result>) {
+    if (cloud) return privateChange('votos.json', votesSchema.parse, mutate);
+    return serialize(async () => {
+      const data = await read();
+      const result = await mutate(data);
+      await write(data);
+      return result;
+    });
+  }
+
   return {
     async initialize() {
+      if (cloud) return;
       await mkdir(dirname(file), {recursive: true, mode: 0o700});
       try {
         await read();
@@ -86,26 +94,22 @@ export function makeVoteStore(file: string, secret: string, professors: {has(id:
       return (await read()).votos.some(vote => vote.dniHash === hash || (studentKey !== undefined && vote.studentKey === studentKey));
     },
     snapshot: read,
-    startElection(expectedId: number, nombre: string, candidates: (votedIds: Set<number>) => z.infer<typeof professorSchema>[]) {
-      return serialize(async () => {
-        const data = await read();
+    startElection(expectedId: number, nombre: string, candidates: (votedIds: Set<number>) => Promise<z.infer<typeof professorSchema>[]>) {
+      return change(async data => {
         if (data.eleccion.id !== expectedId) throw new HttpError(409, 'ELECCION_CAMBIO', 'La votación activa cambió. Actualiza el panel.');
-        data.historial.push({...data.eleccion, cierre: new Date().toISOString(), votos: data.votos, candidatos: candidates(new Set(data.votos.map(vote => vote.profesorId)))});
+        data.historial.push({...data.eleccion, cierre: new Date().toISOString(), votos: data.votos, candidatos: await candidates(new Set(data.votos.map(vote => vote.profesorId)))});
         data.eleccion = {id: expectedId + 1, nombre};
         data.votos = [];
-        await write(data);
         return data.eleccion;
       });
     },
     register(electionId: number, hash: string, names: Names | null, professorId: number, dni?: string, studentKey?: string) {
-      return serialize(async () => {
-        const data = await read();
+      return change(async data => {
         if (electionId !== data.eleccion.id) throw new HttpError(409, 'ELECCION_CAMBIO', 'Empezó otra votación. Identifícate nuevamente para participar.');
-        if (!professors.isActive(professorId)) throw new HttpError(400, 'PROFESOR_INVALIDO', 'Selecciona un candidato válido.');
+        if (!await professors.isActive(professorId)) throw new HttpError(400, 'PROFESOR_INVALIDO', 'Selecciona un candidato válido.');
         if (data.votos.some(vote => vote.dniHash === hash || (studentKey !== undefined && vote.studentKey === studentKey))) throw duplicateVote();
         const vote = {...names, id: randomUUID(), dniHash: hash, profesorId: professorId, fechaVoto: new Date().toISOString()};
         data.votos.push({...vote, ...(dni && {dniCifrado: encryptDni(dni)}), ...(studentKey && {studentKey})});
-        await write(data);
         return {fechaVoto: vote.fechaVoto};
       });
     },

@@ -158,7 +158,7 @@ export function Ballot() {
           <div><dt>Fecha y hora de Lima</dt><dd>{formatDate(receipt.date)}</dd></div>
         </dl>
         <button className="button secondary" onClick={() => {setReceipt(undefined); focusTitle();}}>Volver al inicio</button>
-      </section> : <section className="panel ballot-panel">
+      </section> : <section className={choosing ? "panel ballot-panel ballot-choices" : "panel ballot-panel ballot-entry"}>
         <div className="section-head">
           <span className="feature-icon">{choosing ? <Vote size={24}/> : <ContactRound size={24}/>}</span>
           <div>
@@ -174,8 +174,9 @@ export function Ballot() {
             <div className="professor-grid">
               {election.profesores.map((professor, index) => <label key={professor.id} className="professor-option">
                 <input type="radio" name="profesor" checked={selected === professor.id} onChange={() => setSelected(professor.id)}/>
-                {professor.fotoUrl ? <img className="candidate-photo" src={professor.fotoUrl} alt=""/>
-                  : <span className="professor-avatar" data-tone={index % 4}><UserRound size={28}/></span>}
+                <span className="ballot-candidate-image" data-tone={index % 4}>
+                  {professor.fotoUrl ? <img src={professor.fotoUrl} alt=""/> : <UserRound size={52} aria-hidden="true"/>}
+                </span>
                 <span className="professor-name">{professor.nombre}</span>
               </label>)}
             </div>
@@ -226,7 +227,7 @@ export function Ballot() {
             </div>
           </div>}
           <button className="button primary continue" type="submit" disabled={checkingDetails || (!verification && (!manual || !details.nombres.trim() || !details.apellidoPaterno.trim()))}>
-            {checkingDetails ? 'Comprobando matrícula…' : 'Continuar'} <ArrowRight size={18}/></button>
+            {checkingDetails ? 'Comprobando matrícula…' : 'Ingresar'} <ArrowRight size={18}/></button>
         </form>}
       </section>}
     </div>}

@@ -1,6 +1,7 @@
 import {createHash, randomUUID} from 'node:crypto';
 import {readFile, rename, rm, writeFile} from 'node:fs/promises';
 import {z} from 'zod';
+import {privateChange, privateSnapshot} from './private-store.js';
 import {HttpError} from '../errors.js';
 import {professorSchema, type Professor} from '../validation.js';
 
@@ -39,17 +40,24 @@ function publicCandidate({id, nombre, photo}: Candidate) {
   return {id, nombre, fotoUrl: version ? '/api/candidatos/' + id + '/foto?v=' + version : undefined};
 }
 
-export async function loadCandidates(file: string, initial: Professor[]) {
+export async function loadCandidates(file: string, initial: Professor[], cloud = false) {
   let current = {nextId: Math.max(0, ...initial.map(item => item.id)) + 1,
     candidates: initial.map(item => ({...item, active: true})) as Candidate[]};
-  try {
+  if (!cloud) try {
     current = fileSchema.parse(JSON.parse(await readFile(file, 'utf8')));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
 
   let pending = Promise.resolve();
+  async function read() {
+    if (!cloud) return current;
+    const record = await privateSnapshot('candidatos.json');
+    return record ? fileSchema.parse(record.data) : current;
+  }
+
   function update(change: (draft: typeof current) => void) {
+    if (cloud) return privateChange('candidatos.json', fileSchema.parse, change, () => structuredClone(current));
     const operation = pending.then(async () => {
       const draft = {nextId: current.nextId, candidates: [...current.candidates]};
       change(draft);
@@ -66,18 +74,18 @@ export async function loadCandidates(file: string, initial: Professor[]) {
     return operation;
   }
 
-  function findActive(id: number) {
-    return current.candidates.find(item => item.id === id && item.active);
+  async function findActive(id: number) {
+    return (await read()).candidates.find(item => item.id === id && item.active);
   }
 
   return {
-    has: (id: number) => current.candidates.some(item => item.id === id),
-    isActive: (id: number) => Boolean(findActive(id)),
-    snapshot: (votedIds: Set<number>) => current.candidates.filter(item => item.active || votedIds.has(item.id)).map(publicCandidate),
-    active: () => current.candidates.filter(item => item.active).map(publicCandidate),
-    results: (counts: Map<number, number>) => current.candidates.filter(item => item.active || counts.has(item.id))
+    has: async (id: number) => (await read()).candidates.some(item => item.id === id),
+    isActive: async (id: number) => Boolean(await findActive(id)),
+    snapshot: async (votedIds: Set<number>) => (await read()).candidates.filter(item => item.active || votedIds.has(item.id)).map(publicCandidate),
+    active: async () => (await read()).candidates.filter(item => item.active).map(publicCandidate),
+    results: async (counts: Map<number, number>) => (await read()).candidates.filter(item => item.active || counts.has(item.id))
       .map(item => ({...publicCandidate(item), retirado: !item.active})),
-    image: (id: number) => findActive(id)?.photo,
+    image: async (id: number) => (await findActive(id))?.photo,
     save(input: z.infer<typeof candidateInput>) {
       if (input.photo) validatePhoto(input.photo);
       return update(draft => {

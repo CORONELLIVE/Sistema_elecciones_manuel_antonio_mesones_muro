@@ -15,10 +15,10 @@ export async function createApp(
   verifyStudent: DniProvider = makeDniProvider(config.mode),
   verifyVoter?: VoterVerifier,
 ) {
-  const candidates = await loadCandidates(config.candidatesFile, config.professors);
-  const store = makeVoteStore(config.votesFile, config.hmacKey, candidates);
+  const candidates = await loadCandidates(config.candidatesFile, config.professors, config.cloud);
+  const store = makeVoteStore(config.votesFile, config.hmacKey, candidates, config.cloud);
   await store.initialize();
-  const roster = config.mode === 'padron' ? await loadRoster(config.rosterFile, config.hmacKey) : undefined;
+  const roster = config.mode === 'padron' ? await loadRoster(config.rosterFile, config.hmacKey, config.cloud) : undefined;
 
   const app = express();
   app.disable('x-powered-by');

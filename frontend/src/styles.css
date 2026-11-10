@@ -208,12 +208,26 @@ tbody tr + tr { border-top: 1px solid var(--line); }
 .ballot-screen input.ballot-dni { padding: 15px 16px; font-size: clamp(26px, 5vw, 38px); font-weight: 750; letter-spacing: .12em; border-color: #d6bc68; }
 .ballot-screen input.ballot-dni::placeholder { color: #746763; }
 .lookup-button { margin-top: 16px; }
-.ballot-screen .professor-grid { gap: 16px; }
-.ballot-screen .professor-option { min-height: 88px; padding: 12px; gap: 12px; }
-.ballot-screen .professor-name { font-size: clamp(17px, 3vw, 22px); }
-.ballot-screen .candidate-photo, .ballot-screen .professor-avatar { width: 58px; height: 58px; }
-.ballot-screen .professor-option input { width: 18px; height: 18px; }
-.ballot-screen .ballot-actions, .confirmation .dialog-actions { gap: 14px; }
-@media (max-width: 540px) {
-  .ballot-screen .professor-grid { grid-template-columns: 1fr; }
+.ballot-entry { max-width: 540px; margin-inline: auto; }
+.ballot-entry .section-head { justify-content: center; }
+.ballot-entry form > .hint { text-align: center; }
+.ballot-entry input.ballot-dni { text-align: center; }
+.ballot-entry .lookup-button { display: flex; margin-inline: auto; }
+.ballot-screen .professor-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 16px; }
+.ballot-screen .professor-option {
+  position: relative; flex-direction: column; justify-content: flex-start;
+  text-align: center; padding: 12px; gap: 12px; border-width: 2px;
 }
+.ballot-candidate-image {
+  display: grid; place-items: center; width: 100%; aspect-ratio: 1;
+  border-radius: 8px; overflow: hidden; color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 9%, white);
+}
+.ballot-candidate-image img { width: 100%; height: 100%; object-fit: contain; }
+.ballot-screen .professor-name { font-size: clamp(17px, 3vw, 22px); }
+.ballot-screen .professor-option input { width: 20px; height: 20px; align-self: flex-end; }
+.ballot-screen .professor-option:has(:focus-visible) { outline: 3px solid #b52243; outline-offset: 3px; }
+.ballot-screen .ballot-actions, .confirmation .dialog-actions { gap: 14px; }
+.result-name > span { flex: 1; }
+.result-photo { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; }
+.result-chart span { font-weight: 700; }

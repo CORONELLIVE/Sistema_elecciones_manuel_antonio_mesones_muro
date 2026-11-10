@@ -1,6 +1,7 @@
 import {createDecipheriv, createHmac} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {z} from 'zod';
+import {privateSnapshot} from './private-store.js';
 import {HttpError} from '../errors.js';
 import {namesSchema, type Names} from '../validation.js';
 
@@ -16,8 +17,8 @@ function nameKey({nombres, apellidoPaterno, apellidoMaterno}: Names) {
   ));
 }
 
-export async function loadRoster(file: string, secret: string) {
-  const {keyCheck, students} = rosterSchema.parse(JSON.parse(await readFile(file, 'utf8')));
+export async function loadRoster(file: string, secret: string, cloud = false) {
+  const {keyCheck, students} = rosterSchema.parse(cloud ? (await privateSnapshot('padron.json'))?.data : JSON.parse(await readFile(file, 'utf8')));
   const expected = createHmac('sha256', Buffer.from(secret, 'hex')).update('padron:clave:v1').digest('hex');
   if (keyCheck !== expected) throw new Error('El padrón requiere la misma DNI_HMAC_KEY con la que fue importado.');
   const known = new Map<string, (typeof students)[number]>();
