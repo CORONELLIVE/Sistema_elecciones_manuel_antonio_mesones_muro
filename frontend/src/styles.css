@@ -231,3 +231,39 @@ tbody tr + tr { border-top: 1px solid var(--line); }
 .result-name > span { flex: 1; }
 .result-photo { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; }
 .result-chart span { font-weight: 700; }
+
+
+.election-front {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+  align-items: stretch;
+  margin-top: clamp(16px, 4vw, 46px);
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fffdf4;
+  box-shadow: 0 16px 38px #6810201a;
+}
+.election-cover {
+  display: flex;
+  align-items: center;
+  min-height: 480px;
+  padding: clamp(24px, 5vw, 58px);
+  background: linear-gradient(135deg, #40101aeb, #601225b8), url('./assets/entrada-colegio.jpg') center / cover;
+  color: white;
+}
+.election-cover h1 {
+  margin-block: 12px;
+  color: white;
+  font-size: clamp(33px, 4.5vw, 55px);
+  text-wrap: balance;
+}
+.election-cover-brand { display: flex; align-items: center; gap: 12px; }
+.election-cover-brand img { width: 48px; height: 60px; object-fit: contain; }
+.election-school { color: #ffe88a; font-size: clamp(16px, 2vw, 20px); font-weight: 750; }
+.election-intro { font-size: clamp(17px, 2vw, 20px); }
+.election-form { display: grid; align-content: center; min-width: 0; padding: clamp(12px, 2.8vw, 32px); }
+.election-form .ballot-entry { max-width: none; }
+@media (max-width: 760px) {
+  .election-front { grid-template-columns: 1fr; }
+  .election-cover { min-height: clamp(220px, 55vw, 340px); }
+}

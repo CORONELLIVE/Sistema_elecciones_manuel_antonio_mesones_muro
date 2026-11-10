@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {ArrowLeft, ArrowRight, BadgeCheck, CircleCheck, ContactRound, Info, LoaderCircle, Search, UserRound, Vote} from 'lucide-react';
 import {api, ApiError, formatDate, fullName, type Professor, type Student, type Verification} from '../api';
+import logo from '../assets/escudo-colegio.png';
 import {NameLookup} from './NameLookup';
 import {Confirmation} from './Confirmation';
 import {Notice, Shell} from './Shell';
@@ -140,97 +141,108 @@ export function Ballot() {
 
   const waiting = Boolean(election && dni.length === 8 && !verification && !lookupError && !manual);
   return <Shell ballot>
-    <section className="hero">
-      <h1>Elecciones del Municipio Escolar 2026</h1>
-    </section>
-    {election?.modoPrueba && <div className="demo-banner"><Info size={17}/><span><strong>Modo de prueba.</strong> Usa un DNI ficticio del <b>00000001</b> al <b>00000004</b>.</span></div>}
-    {electionError && <div className="panel padded">
-      <Notice message={electionError}/>
-      <button className="button secondary mt-4" onClick={() => {setElectionError(''); setElectionAttempt(electionAttempt + 1);}}>Reintentar</button>
-    </div>}
-    {!election && !electionError && <p className="panel padded status" role="status"><LoaderCircle size={18} className="spin"/> Cargando la elección…</p>}
-    {election && <div className="ballot-layout">
-      {receipt ? <section className="panel success" aria-live="polite">
-        <div className="success-icon"><CircleCheck size={42}/></div>
-        <h2 ref={title} tabIndex={-1}>¡Voto registrado!</h2>
-        <dl className="confirmation-summary">
-          {receipt.name && <div><dt>Alumno</dt><dd>{receipt.name}</dd></div>}
-          <div><dt>Fecha y hora de Lima</dt><dd>{formatDate(receipt.date)}</dd></div>
-        </dl>
-        <button className="button secondary" onClick={() => {setReceipt(undefined); focusTitle();}}>Volver al inicio</button>
-      </section> : <section className={choosing ? "panel ballot-panel ballot-choices" : "panel ballot-panel ballot-entry"}>
-        <div className="section-head">
-          <span className="feature-icon">{choosing ? <Vote size={24}/> : <ContactRound size={24}/>}</span>
-          <div>
-            <h2 ref={title} tabIndex={-1}>{choosing ? 'Elige tu candidato' : 'Ingresa tu DNI'}</h2>
+    <div className="election-front">
+      <section className="election-cover" aria-labelledby="election-heading">
+        <div className="election-cover-copy">
+          <div className="election-cover-brand">
+            <img src={logo} alt="" width={48} height={60}/>
+            <p className="election-school">Manuel Antonio Mesones Muro</p>
           </div>
+          <h1 id="election-heading">Elecciones del Municipio Escolar 2026</h1>
+          <p className="election-intro">Ingresa tu DNI y elige a tu candidato.</p>
         </div>
-        {choosing && verification ? <>
-          {participant && <div className="verified"><BadgeCheck size={19}/> {participant}</div>}
-          <fieldset className="professor-fieldset">
-            <legend className="sr-only">Candidatos</legend>
-            {voteError && <Notice message={voteError}/>}
-            {!election.profesores.length && <p className="hint">Aún no hay candidatos disponibles.</p>}
-            <div className="professor-grid">
-              {election.profesores.map((professor, index) => <label key={professor.id} className="professor-option">
-                <input type="radio" name="profesor" checked={selected === professor.id} onChange={() => setSelected(professor.id)}/>
-                <span className="ballot-candidate-image" data-tone={index % 4}>
-                  {professor.fotoUrl ? <img src={professor.fotoUrl} alt=""/> : <UserRound size={52} aria-hidden="true"/>}
-                </span>
-                <span className="professor-name">{professor.nombre}</span>
-              </label>)}
+      </section>
+      <div className="election-form">
+        {election?.modoPrueba && <div className="demo-banner"><Info size={17}/><span><strong>Modo de prueba.</strong> Usa un DNI ficticio del <b>00000001</b> al <b>00000004</b>.</span></div>}
+        {electionError && <div className="panel padded">
+          <Notice message={electionError}/>
+          <button className="button secondary mt-4" onClick={() => {setElectionError(''); setElectionAttempt(electionAttempt + 1);}}>Reintentar</button>
+        </div>}
+        {!election && !electionError && <p className="panel padded status" role="status"><LoaderCircle size={18} className="spin"/> Cargando la elección…</p>}
+        {election && <div className="ballot-layout">
+          {receipt ? <section className="panel success" aria-live="polite">
+            <div className="success-icon"><CircleCheck size={42}/></div>
+            <h2 ref={title} tabIndex={-1}>¡Voto registrado!</h2>
+            <dl className="confirmation-summary">
+              {receipt.name && <div><dt>Alumno</dt><dd>{receipt.name}</dd></div>}
+              <div><dt>Fecha y hora de Lima</dt><dd>{formatDate(receipt.date)}</dd></div>
+            </dl>
+            <button className="button secondary" onClick={() => {setReceipt(undefined); focusTitle();}}>Volver al inicio</button>
+          </section> : <section className={choosing ? "panel ballot-panel ballot-choices" : "panel ballot-panel ballot-entry"}>
+            <div className="section-head">
+              <span className="feature-icon">{choosing ? <Vote size={24}/> : <ContactRound size={24}/>}</span>
+              <div>
+                <h2 ref={title} tabIndex={-1}>{choosing ? 'Elige tu candidato' : 'Ingresa tu DNI'}</h2>
+              </div>
             </div>
-          </fieldset>
-          <div className="ballot-actions">
-            <button className="button secondary" onClick={() => {resetIdentity(''); focusTitle();}}><ArrowLeft size={17}/> Cambiar DNI</button>
-            <button className="button primary" disabled={!active} onClick={() => {setVoteError(''); setModal(true);}}>
-              <Vote size={21}/> Revisar mi voto
-            </button>
-          </div>
-        </> : <form onSubmit={event => {event.preventDefault(); void continueToBallot();}}>
-          <label className="sr-only" htmlFor="dni">Ingresa tu DNI</label>
-          <input className="ballot-dni" id="dni" disabled={checkingDetails} ref={input} value={dni} inputMode="numeric" autoComplete="off" placeholder="00000000"
-              aria-describedby="dni-hint" aria-invalid={Boolean(lookupError && dni.length === 8)}
-              onChange={event => {
-                const value = event.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 8);
-                if (value !== dni) resetIdentity(value);
-              }}/>
-          <p className="hint" id="dni-hint">8 dígitos</p>
-          {election.buscarPorNombre && !verification && !manual && <>
-            <button type="button" className="button secondary lookup-button" aria-expanded={showNameLookup}
-              onClick={() => setShowNameLookup(value => !value)}><Search size={21}/> Buscar por nombre</button>
-            {showNameLookup && <NameLookup onFound={resetIdentity}/>}
-          </>}
-          {waiting && <p className="status" role="status"><LoaderCircle className="spin" size={17}/> {election.soloDni ? 'Comprobando si el DNI ya votó…' : 'Consultando DNI...'}</p>}
-          {lookupError && <div className="mt-4">
-            <Notice message={lookupError.message} duplicate={lookupError.code === 'YA_VOTO'}/>
-            {lookupError.code === 'YA_VOTO' ? <button className="button text-button" type="button" onClick={() => {resetIdentity(''); input.current?.focus();}}>Ingresar otro DNI</button>
-              : !manual && dni.length === 8 && <button className="button text-button" type="button" onClick={() => {setLookupError(undefined); setAttempt(attempt + 1);}}>Reintentar consulta</button>}
-          </div>}
-          {manual && !student && <div className="student-data">
-            <p className="section-description">Tu DNI no figura en el padrón. Escribe tus nombres y apellidos tal como aparecen en tu matrícula.</p>
-            <label>Nombres<input required maxLength={120} disabled={checkingDetails} value={details.nombres}
-              onChange={event => setDetails({...details, nombres: event.target.value})}/></label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label>Apellido paterno<input required maxLength={100} disabled={checkingDetails} value={details.apellidoPaterno}
-                onChange={event => setDetails({...details, apellidoPaterno: event.target.value})}/></label>
-              <label>Apellido materno<input maxLength={100} disabled={checkingDetails} value={details.apellidoMaterno}
-                onChange={event => setDetails({...details, apellidoMaterno: event.target.value})}/></label>
-            </div>
-          </div>}
-          {student && <div className="student-data">
-            <div className="verified" role="status"><BadgeCheck size={19}/> Datos verificados</div>
-            <label>Nombres<input readOnly value={student.nombres}/></label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label>Apellido paterno<input readOnly value={student.apellidoPaterno}/></label>
-              <label>Apellido materno<input readOnly value={student.apellidoMaterno}/></label>
-            </div>
-          </div>}
-          <button className="button primary continue" type="submit" disabled={checkingDetails || (!verification && (!manual || !details.nombres.trim() || !details.apellidoPaterno.trim()))}>
-            {checkingDetails ? 'Comprobando matrícula…' : 'Ingresar'} <ArrowRight size={18}/></button>
-        </form>}
-      </section>}
-    </div>}
+            {choosing && verification ? <>
+              {participant && <div className="verified"><BadgeCheck size={19}/> {participant}</div>}
+              <fieldset className="professor-fieldset">
+                <legend className="sr-only">Candidatos</legend>
+                {voteError && <Notice message={voteError}/>}
+                {!election.profesores.length && <p className="hint">Aún no hay candidatos disponibles.</p>}
+                <div className="professor-grid">
+                  {election.profesores.map((professor, index) => <label key={professor.id} className="professor-option">
+                    <input type="radio" name="profesor" checked={selected === professor.id} onChange={() => setSelected(professor.id)}/>
+                    <span className="ballot-candidate-image" data-tone={index % 4}>
+                      {professor.fotoUrl ? <img src={professor.fotoUrl} alt=""/> : <UserRound size={52} aria-hidden="true"/>}
+                    </span>
+                    <span className="professor-name">{professor.nombre}</span>
+                  </label>)}
+                </div>
+              </fieldset>
+              <div className="ballot-actions">
+                <button className="button secondary" onClick={() => {resetIdentity(''); focusTitle();}}><ArrowLeft size={17}/> Cambiar DNI</button>
+                <button className="button primary" disabled={!active} onClick={() => {setVoteError(''); setModal(true);}}>
+                  <Vote size={21}/> Revisar mi voto
+                </button>
+              </div>
+            </> : <form onSubmit={event => {event.preventDefault(); void continueToBallot();}}>
+              <label className="sr-only" htmlFor="dni">Ingresa tu DNI</label>
+              <input className="ballot-dni" id="dni" disabled={checkingDetails} ref={input} value={dni} inputMode="numeric" autoComplete="off" placeholder="00000000"
+                  aria-describedby="dni-hint" aria-invalid={Boolean(lookupError && dni.length === 8)}
+                  onChange={event => {
+                    const value = event.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 8);
+                    if (value !== dni) resetIdentity(value);
+                  }}/>
+              <p className="hint" id="dni-hint">8 dígitos</p>
+              {election.buscarPorNombre && !verification && !manual && <>
+                <button type="button" className="button secondary lookup-button" aria-expanded={showNameLookup}
+                  onClick={() => setShowNameLookup(value => !value)}><Search size={21}/> Buscar por nombre</button>
+                {showNameLookup && <NameLookup onFound={resetIdentity}/>}
+              </>}
+              {waiting && <p className="status" role="status"><LoaderCircle className="spin" size={17}/> {election.soloDni ? 'Comprobando si el DNI ya votó…' : 'Consultando DNI...'}</p>}
+              {lookupError && <div className="mt-4">
+                <Notice message={lookupError.message} duplicate={lookupError.code === 'YA_VOTO'}/>
+                {lookupError.code === 'YA_VOTO' ? <button className="button text-button" type="button" onClick={() => {resetIdentity(''); input.current?.focus();}}>Ingresar otro DNI</button>
+                  : !manual && dni.length === 8 && <button className="button text-button" type="button" onClick={() => {setLookupError(undefined); setAttempt(attempt + 1);}}>Reintentar consulta</button>}
+              </div>}
+              {manual && !student && <div className="student-data">
+                <p className="section-description">Tu DNI no figura en el padrón. Escribe tus nombres y apellidos tal como aparecen en tu matrícula.</p>
+                <label>Nombres<input required maxLength={120} disabled={checkingDetails} value={details.nombres}
+                  onChange={event => setDetails({...details, nombres: event.target.value})}/></label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label>Apellido paterno<input required maxLength={100} disabled={checkingDetails} value={details.apellidoPaterno}
+                    onChange={event => setDetails({...details, apellidoPaterno: event.target.value})}/></label>
+                  <label>Apellido materno<input maxLength={100} disabled={checkingDetails} value={details.apellidoMaterno}
+                    onChange={event => setDetails({...details, apellidoMaterno: event.target.value})}/></label>
+                </div>
+              </div>}
+              {student && <div className="student-data">
+                <div className="verified" role="status"><BadgeCheck size={19}/> Datos verificados</div>
+                <label>Nombres<input readOnly value={student.nombres}/></label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label>Apellido paterno<input readOnly value={student.apellidoPaterno}/></label>
+                  <label>Apellido materno<input readOnly value={student.apellidoMaterno}/></label>
+                </div>
+              </div>}
+              <button className="button primary continue" type="submit" disabled={checkingDetails || (!verification && (!manual || !details.nombres.trim() || !details.apellidoPaterno.trim()))}>
+                {checkingDetails ? 'Comprobando matrícula…' : 'Ingresar'} <ArrowRight size={18}/></button>
+            </form>}
+          </section>}
+        </div>}
+      </div>
+    </div>
     {modal && verification && active && <Confirmation student={participant} professor={active.nombre}
       busy={saving} error={voteError} onClose={() => setModal(false)} onConfirm={submitVote}/>}
   </Shell>;
