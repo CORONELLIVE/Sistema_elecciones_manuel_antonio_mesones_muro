@@ -18,7 +18,8 @@ export function loadConfig(env = process.env) {
   const password = env.ADMIN_PASSWORD || '';
   const hmacKey = env.DNI_HMAC_KEY || '';
   if (production && mode === 'mock') throw new Error('El proveedor ficticio solo está disponible en desarrollo.');
-  const minimumPasswordLength = !production && host === '127.0.0.1' && proxyHops === 0 ? 8 : 16;
+  const local = !production && host === '127.0.0.1' && proxyHops === 0;
+  const minimumPasswordLength = local || env.ALLOW_SHORT_ADMIN_PASSWORD === '1' ? 8 : 16;
   if (!/^[a-f0-9]{64}$/i.test(hmacKey) || password.length < minimumPasswordLength || password.length > 256) {
     throw new Error('Configura ADMIN_PASSWORD (' + minimumPasswordLength + ' a 256 caracteres) y DNI_HMAC_KEY (64 hexadecimales). Ejecuta el script setup para desarrollo.');
   }
