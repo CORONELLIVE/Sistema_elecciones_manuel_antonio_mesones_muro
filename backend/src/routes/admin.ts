@@ -4,6 +4,7 @@ import {z} from 'zod';
 import type {Config} from '../config.js';
 import {HttpError} from '../errors.js';
 import {candidateInput, type Candidates} from '../services/candidates.js';
+import {rosterInput, type rosterStore} from '../services/roster.js';
 import {resultsPdf} from '../services/results-pdf.js';
 import {expiringTokens, sharedTokens} from '../services/expiring.js';
 import type {VoteStore} from '../services/votes.js';
@@ -14,7 +15,7 @@ function searchable(value: string) {
   return value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es-PE');
 }
 
-export function adminRoutes(config: Config, store: VoteStore, candidates: Candidates) {
+export function adminRoutes(config: Config, store: VoteStore, candidates: Candidates, roster?: ReturnType<typeof rosterStore>) {
   const router = Router();
   const duration = 4 * 60 * 60_000;
   const sessions = config.cloud ? sharedTokens<true>('sesiones.json', duration, 1000, config.hmacKey)
@@ -48,6 +49,41 @@ export function adminRoutes(config: Config, store: VoteStore, candidates: Candid
   router.post('/logout', async (req, res) => {
     await sessions.remove(sessionToken(req));
     res.clearCookie(cookieName, cookie).status(204).end();
+  });
+
+  router.post('/padron/buscar', async (req, res) => {
+    if (!roster) throw new HttpError(404, 'PADRON_INACTIVO', 'El padrón no está habilitado.');
+    const {query, page} = parseBody(z.strictObject({
+      query: z.string().max(250), page: z.number().int().positive(),
+    }), req.body, 'Revisa los filtros del padrón.');
+    res.json(await roster.list(query, page));
+  });
+
+  router.post('/padron/guardar', async (req, res) => {
+    if (!roster) throw new HttpError(404, 'PADRON_INACTIVO', 'El padrón no está habilitado.');
+    const input = parseBody(rosterInput, req.body, 'Revisa los datos del estudiante.');
+    if (input.id && input.matricula === 'TRASLADADO' && await store.hasVoted('', input.id)) {
+      throw new HttpError(409, 'ALUMNO_YA_VOTO', 'Este estudiante ya votó en la elección activa. Puedes cambiar su matrícula cuando termine.');
+    }
+    await roster.save(input);
+    res.status(204).end();
+  });
+
+  router.post('/padron/eliminar', async (req, res) => {
+    if (!roster) throw new HttpError(404, 'PADRON_INACTIVO', 'El padrón no está habilitado.');
+    const {id} = parseBody(z.strictObject({id: z.string().regex(/^[0-9a-f]{64}$/)}), req.body, 'Registro inválido.');
+    if (await store.hasVoted('', id)) {
+      throw new HttpError(409, 'ALUMNO_YA_VOTO', 'Este estudiante ya votó en la elección activa. Puedes eliminar su registro cuando termine.');
+    }
+    await roster.remove(id);
+    res.status(204).end();
+  });
+
+  router.post('/elecciones/restablecer', async (req, res) => {
+    const {id, archivada} = parseBody(z.strictObject({id: z.number().int().positive(), archivada: z.boolean()}),
+      req.body, 'Selecciona la votación que quieres restablecer.');
+    await store.resetElection(id, archivada);
+    res.status(204).end();
   });
 
   router.post('/candidatos/guardar', json({limit: '3mb'}), async (req, res) => {

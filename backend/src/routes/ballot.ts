@@ -7,7 +7,7 @@ import type {Candidates} from '../services/candidates.js';
 import type {DniProvider} from '../services/dni.js';
 import {privateChange} from '../services/private-store.js';
 import {expiringTokens, sharedTokens} from '../services/expiring.js';
-import type {Roster} from '../services/roster.js';
+import type {rosterStore} from '../services/roster.js';
 import type {VoteStore} from '../services/votes.js';
 import {ballotSchema, lookupSchema, namesSchema, parseBody, type Names} from '../validation.js';
 
@@ -38,7 +38,7 @@ export function limit(max: number, windowMs: number, config?: Config, scope?: st
 
 export type VoterVerifier = (dni: string, code: string | undefined) => Promise<void>;
 
-export function ballotRoutes(config: Config, store: VoteStore, candidates: Candidates, verifyStudent: DniProvider, verifyVoter?: VoterVerifier, roster?: Roster) {
+export function ballotRoutes(config: Config, store: VoteStore, candidates: Candidates, verifyStudent: DniProvider, verifyVoter?: VoterVerifier, roster?: ReturnType<typeof rosterStore>) {
   const router = Router();
   type Ticket = {hash: string; names: Names | null; electionId: number; dni?: string; studentKey?: string};
   const tickets = config.cloud ? sharedTokens<Ticket>('comprobantes.json', 10 * 60_000, 10_000, config.hmacKey)
@@ -49,12 +49,12 @@ export function ballotRoutes(config: Config, store: VoteStore, candidates: Candi
   router.get('/eleccion', async (_req, res) => {
     const {eleccion, votos} = await store.snapshot();
     const participaron = votos.length;
-    const total = roster?.eligibleCount ?? null;
+    const total = roster ? (await roster.load()).eligibleCount : null;
     const participacion = {total, participaron, pendientes: total === null ? null : Math.max(0, total - participaron)};
     res.json({eleccion, participacion, profesores: await candidates.active(), modoPrueba: config.mode === 'mock', soloDni: config.mode === 'dni-local', buscarPorNombre: nameLookup});
   });
 
-  router.post('/alumnos/buscar-nombre', limit(30, 60_000), (req, res) => {
+  router.post('/alumnos/buscar-nombre', limit(30, 60_000), async (req, res) => {
     const origin = req.get('origin');
     if (!nameLookup || !roster || !origin || !['127.0.0.1', 'localhost'].includes(new URL(origin).hostname)
       || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress ?? '')
@@ -62,7 +62,7 @@ export function ballotRoutes(config: Config, store: VoteStore, candidates: Candi
       throw new HttpError(403, 'BUSQUEDA_LOCAL', 'La búsqueda por nombre está habilitada en la PC de votación.');
     }
     const names = parseBody(namesSchema.strict(), req.body, 'Completa tus nombres y apellidos.');
-    res.json({dni: roster.findDni(names)});
+    res.json({dni: (await roster.load()).findDni(names)});
   });
 
   router.get('/candidatos/:id/foto', async (req, res) => {
@@ -80,7 +80,7 @@ export function ballotRoutes(config: Config, store: VoteStore, candidates: Candi
     const hash = store.hash(dni);
     if (verifyVoter) await verifyVoter(dni, codigo);
     if (await store.hasVoted(hash)) throw duplicateVote();
-    const student = roster?.find(hash, datos);
+    const student = roster ? (await roster.load()).find(hash, datos) : undefined;
     if (student && await store.hasVoted(hash, student.studentKey)) throw duplicateVote();
     const names = student ? student.names : config.mode === 'dni-local' ? null : await verifyStudent(dni);
     if (config.mode !== 'dni-local' && !names) {
@@ -96,6 +96,9 @@ export function ballotRoutes(config: Config, store: VoteStore, candidates: Candi
     const {ticket, profesorId} = parseBody(ballotSchema, req.body, 'La solicitud de voto no es válida.');
     const verified = await tickets.get(ticket);
     if (!verified) throw new HttpError(401, 'VERIFICACION_VENCIDA', 'Ingresa tu DNI nuevamente para continuar.');
+    if (roster && (!verified.studentKey || !(await roster.load()).accepts(verified.hash, verified.studentKey))) {
+      throw new HttpError(409, 'ELECCION_CAMBIO', 'El padrón cambió. Identifícate nuevamente para continuar.');
+    }
     res.status(201).json(await store.register(verified.electionId, verified.hash, verified.names, profesorId, verified.dni, verified.studentKey));
   });
 

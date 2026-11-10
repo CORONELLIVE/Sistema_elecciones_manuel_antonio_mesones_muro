@@ -7,7 +7,7 @@ import {adminRoutes} from './routes/admin.js';
 import {ballotRoutes, type VoterVerifier} from './routes/ballot.js';
 import {makeDniProvider, type DniProvider} from './services/dni.js';
 import {loadCandidates} from './services/candidates.js';
-import {loadRoster} from './services/roster.js';
+import {rosterStore} from './services/roster.js';
 import {makeVoteStore} from './services/votes.js';
 
 export async function createApp(
@@ -18,7 +18,7 @@ export async function createApp(
   const candidates = await loadCandidates(config.candidatesFile, config.professors, config.cloud);
   const store = makeVoteStore(config.votesFile, config.hmacKey, candidates, config.cloud);
   await store.initialize();
-  const roster = config.mode === 'padron' ? await loadRoster(config.rosterFile, config.hmacKey, config.cloud) : undefined;
+  const roster = config.mode === 'padron' ? rosterStore(config.rosterFile, config.hmacKey, config.cloud) : undefined;
 
   const app = express();
   app.disable('x-powered-by');
@@ -43,7 +43,7 @@ export async function createApp(
     if (req.path === '/admin/candidatos/guardar') return next();
     return smallJson(req, res, next);
   });
-  app.use('/api/admin', adminRoutes(config, store, candidates));
+  app.use('/api/admin', adminRoutes(config, store, candidates, roster));
   app.use('/api', ballotRoutes(config, store, candidates, verifyStudent, verifyVoter, roster));
   app.use('/api', (_req, _res, next) => next(new HttpError(404, 'RUTA_INVALIDA', 'La ruta no existe.')));
   app.use('/assets', express.static(resolve(config.staticDir, 'assets'), {index: false, maxAge: '1y', immutable: true}));

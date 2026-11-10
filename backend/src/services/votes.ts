@@ -94,6 +94,19 @@ export function makeVoteStore(file: string, secret: string, professors: {isActiv
       return (await read()).votos.some(vote => vote.dniHash === hash || (studentKey !== undefined && vote.studentKey === studentKey));
     },
     snapshot: read,
+    resetElection(id: number, archived: boolean) {
+      return change(async data => {
+        if (archived) {
+          const election = data.historial.find(item => item.id === id);
+          if (!election) throw new HttpError(404, 'ELECCION_NO_ENCONTRADA', 'La votación archivada ya no existe.');
+          election.votos = [];
+          return;
+        }
+        if (data.eleccion.id !== id) throw new HttpError(409, 'ELECCION_CAMBIO', 'La votación activa cambió. Actualiza el panel.');
+        data.votos = [];
+        data.eleccion.id++;
+      });
+    },
     startElection(expectedId: number, nombre: string, candidates: (votedIds: Set<number>) => Promise<z.infer<typeof professorSchema>[]>) {
       return change(async data => {
         if (data.eleccion.id !== expectedId) throw new HttpError(409, 'ELECCION_CAMBIO', 'La votación activa cambió. Actualiza el panel.');

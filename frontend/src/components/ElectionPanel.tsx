@@ -1,5 +1,5 @@
 import {useState, type FormEvent} from 'react';
-import {Download, Plus} from 'lucide-react';
+import {Download, Plus, RotateCcw} from 'lucide-react';
 import {api, formatDate} from '../api';
 import {Notice} from './Shell';
 
@@ -39,6 +39,22 @@ export function ElectionPanel({current, history, total, onChange}: {
     }
   }
 
+  async function reset(election: ElectionSummary, archivada: boolean) {
+    if (busy || !window.confirm('¿Restablecer «' + election.nombre + '»? Al aceptar, se borrarán todos los votos y registros de participación de esta votación. Los resultados volverán a cero, como si nadie hubiera votado.')) return;
+    setBusy(true);
+    setError('');
+    setStatus('');
+    try {
+      await api('/admin/elecciones/restablecer', {body: {id: election.id, archivada}});
+      setStatus('Votación restablecida. Los resultados volvieron a cero.');
+      onChange();
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return <section className="panel padded candidate-panel" aria-labelledby="elections-title">
     <div className="results-head">
       <div>
@@ -48,6 +64,7 @@ export function ElectionPanel({current, history, total, onChange}: {
       </div>
       <div className="election-actions">
         <PdfLink id={current.id}/>
+        <button className="button secondary" disabled={busy} onClick={() => void reset(current, false)}><RotateCcw size={16}/> Restablecer votos</button>
         <button className="button primary" onClick={() => setOpen(value => !value)} aria-expanded={open}><Plus size={16}/> Nueva votación</button>
       </div>
     </div>
@@ -65,7 +82,10 @@ export function ElectionPanel({current, history, total, onChange}: {
       <ul className="candidate-list">
         {history.map(election => <li key={election.id}>
           <div><strong>{election.nombre}</strong><p className="hint">{election.total} votos · {formatDate(election.cierre)}</p></div>
-          <PdfLink id={election.id}/>
+          <div className="election-actions">
+            <PdfLink id={election.id}/>
+            <button className="button secondary" disabled={busy} onClick={() => void reset(election, true)}><RotateCcw size={16}/> Restablecer votos</button>
+          </div>
         </li>)}
       </ul>
     </details>}

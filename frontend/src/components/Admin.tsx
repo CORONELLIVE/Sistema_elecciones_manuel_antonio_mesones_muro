@@ -2,6 +2,7 @@ import {useEffect, useState, type FormEvent} from 'react';
 import {ArrowDown, ChevronLeft, ChevronRight, Clock3, Info, LoaderCircle, LockKeyhole, LogOut, Search, Trophy, UsersRound, Vote} from 'lucide-react';
 import {api, ApiError, formatDate, type Professor} from '../api';
 import {ElectionPanel, type ElectionSummary, type ArchivedElection} from './ElectionPanel';
+import {RosterPanel} from './RosterPanel';
 import {CandidatePanel} from './CandidatePanel';
 import {Notice, Shell} from './Shell';
 
@@ -137,6 +138,7 @@ export function Admin() {
         setPage(1);
         setAttempt(value => value + 1);
       }}/>
+      <RosterPanel/>
       <CandidatePanel candidates={data.candidatos} onChange={() => {
         setProfessor('');
         setPage(1);
