@@ -267,3 +267,8 @@ tbody tr + tr { border-top: 1px solid var(--line); }
   .election-front { grid-template-columns: 1fr; }
   .election-cover { min-height: clamp(220px, 55vw, 340px); }
 }
+
+.election-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 22px; }
+.election-stats > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 4px; padding: 10px; border: 1px solid #ffffff55; border-radius: 10px; background: #30101e66; }
+.election-stats dd { font-size: clamp(22px, 3vw, 34px); font-weight: 800; line-height: 1; }
+.election-stats dt { font-size: clamp(12px, 1.4vw, 15px); line-height: 1.2; overflow-wrap: anywhere; }

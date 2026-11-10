@@ -42,6 +42,7 @@ export async function loadRoster(file: string, secret: string, cloud = false) {
     map.set(index, student);
   }
   return {
+    eligibleCount: [...known.values()].filter(student => student.matricula === "DEFINITIVA").length + missing.size,
     findDni(names: Names) {
       const matches = byName.get(nameKey(names));
       const student = matches?.length === 1 ? matches[0] : undefined;

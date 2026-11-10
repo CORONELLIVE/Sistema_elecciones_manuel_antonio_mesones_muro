@@ -47,8 +47,11 @@ export function ballotRoutes(config: Config, store: VoteStore, candidates: Candi
   const nameLookup = Boolean(roster && !config.production && config.host === '127.0.0.1' && config.proxyHops === 0);
 
   router.get('/eleccion', async (_req, res) => {
-    const {eleccion} = await store.snapshot();
-    res.json({eleccion, profesores: await candidates.active(), modoPrueba: config.mode === 'mock', soloDni: config.mode === 'dni-local', buscarPorNombre: nameLookup});
+    const {eleccion, votos} = await store.snapshot();
+    const participaron = votos.length;
+    const total = roster?.eligibleCount ?? null;
+    const participacion = {total, participaron, pendientes: total === null ? null : Math.max(0, total - participaron)};
+    res.json({eleccion, participacion, profesores: await candidates.active(), modoPrueba: config.mode === 'mock', soloDni: config.mode === 'dni-local', buscarPorNombre: nameLookup});
   });
 
   router.post('/alumnos/buscar-nombre', limit(30, 60_000), (req, res) => {

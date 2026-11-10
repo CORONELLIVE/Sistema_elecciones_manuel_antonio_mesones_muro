@@ -6,7 +6,7 @@ import {NameLookup} from './NameLookup';
 import {Confirmation} from './Confirmation';
 import {Notice, Shell} from './Shell';
 
-type Election = {eleccion: {id: number}; buscarPorNombre: boolean; profesores: Professor[]; modoPrueba: boolean; soloDni: boolean};
+type Election = {eleccion: {id: number}; participacion: {total: number | null; participaron: number; pendientes: number | null}; buscarPorNombre: boolean; profesores: Professor[]; modoPrueba: boolean; soloDni: boolean};
 
 const emptyStudent: Student = {nombres: '', apellidoPaterno: '', apellidoMaterno: ''};
 
@@ -117,6 +117,7 @@ export function Ballot() {
         body: {ticket: verification.ticket, profesorId: active.id},
       });
       setReceipt({name: participant, date: result.fechaVoto});
+      setElectionAttempt(value => value + 1);
       setModal(false);
       resetIdentity('');
       focusTitle();
@@ -150,6 +151,11 @@ export function Ballot() {
           </div>
           <h1 id="election-heading">Elecciones del Municipio Escolar 2026</h1>
           <p className="election-intro">Ingresa tu DNI y elige a tu candidato.</p>
+          <dl className="election-stats">
+            <div><dt>Total de votantes</dt><dd>{election?.participacion.total?.toLocaleString('es-PE') ?? '—'}</dd></div>
+            <div><dt>Participaron</dt><dd>{election?.participacion.participaron.toLocaleString('es-PE') ?? '—'}</dd></div>
+            <div><dt>Pendientes</dt><dd>{election?.participacion.pendientes?.toLocaleString('es-PE') ?? '—'}</dd></div>
+          </dl>
         </div>
       </section>
       <div className="election-form">
