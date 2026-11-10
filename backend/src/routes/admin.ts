@@ -89,7 +89,7 @@ export function adminRoutes(config: Config, store: VoteStore, candidates: Candid
     const page = typeof pagina === 'string' && /^\d{1,8}$/.test(pagina) ? Math.max(1, Number(pagina)) : 1;
     const search = typeof buscar === 'string' ? searchable(buscar.trim().slice(0, 150)) : '';
     if (profesor !== undefined && (professorId === undefined || !candidates.has(professorId))) {
-      throw new HttpError(400, 'PROFESOR_INVALIDO', 'Selecciona un profesor válido.');
+      throw new HttpError(400, 'PROFESOR_INVALIDO', 'Selecciona un candidato válido.');
     }
 
     const data = await store.snapshot();

@@ -1,24 +1,13 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {ArrowLeft, ArrowRight, BadgeCheck, Check, ChevronRight, CircleCheck, ContactRound, GraduationCap, Info, LoaderCircle, ShieldCheck, Vote} from 'lucide-react';
+import {ArrowLeft, ArrowRight, BadgeCheck, CircleCheck, ContactRound, Info, LoaderCircle, Search, UserRound, Vote} from 'lucide-react';
 import {api, ApiError, formatDate, fullName, type Professor, type Student, type Verification} from '../api';
 import {NameLookup} from './NameLookup';
 import {Confirmation} from './Confirmation';
 import {Notice, Shell} from './Shell';
 
-type Election = {eleccion: {id: number; nombre: string}; buscarPorNombre: boolean; profesores: Professor[]; modoPrueba: boolean; soloDni: boolean};
+type Election = {eleccion: {id: number}; buscarPorNombre: boolean; profesores: Professor[]; modoPrueba: boolean; soloDni: boolean};
 
 const emptyStudent: Student = {nombres: '', apellidoPaterno: '', apellidoMaterno: ''};
-
-function Progress({step}: {step: number}) {
-  return <ol className="progress" aria-label="Progreso de la votación">
-    {['Identificación', 'Selección', 'Confirmación'].map((label, index) =>
-      <li key={label} className={index <= step ? 'reached' : ''} aria-current={index === step ? 'step' : undefined}>
-        <span className="step-number">{index < step ? <Check size={15}/> : index + 1}</span>
-        <span>{label}</span>
-        {index < 2 && <ChevronRight className="step-arrow" size={16} aria-hidden/>}
-      </li>)}
-  </ol>;
-}
 
 export function Ballot() {
   const [election, setElection] = useState<Election>();
@@ -150,13 +139,10 @@ export function Ballot() {
   }
 
   const waiting = Boolean(election && dni.length === 8 && !verification && !lookupError && !manual);
-  return <Shell>
+  return <Shell ballot>
     <section className="hero">
-      <div className="eyebrow"><GraduationCap size={16}/> PARTICIPACIÓN ESTUDIANTIL</div>
-      <h1>{election?.eleccion?.nombre ?? 'Elección de Profesores'}</h1>
-      <p>Ingresa tu DNI, elige a un profesor y confirma tu voto.</p>
+      <h1>Elecciones del Municipio Escolar 2026</h1>
     </section>
-    <Progress step={receipt || modal ? 2 : choosing ? 1 : 0}/>
     {election?.modoPrueba && <div className="demo-banner"><Info size={17}/><span><strong>Modo de prueba.</strong> Usa un DNI ficticio del <b>00000001</b> al <b>00000004</b>.</span></div>}
     {electionError && <div className="panel padded">
       <Notice message={electionError}/>
@@ -166,9 +152,7 @@ export function Ballot() {
     {election && <div className="ballot-layout">
       {receipt ? <section className="panel success" aria-live="polite">
         <div className="success-icon"><CircleCheck size={42}/></div>
-        <div className="eyebrow">VOTACIÓN COMPLETADA</div>
-        <h2 ref={title} tabIndex={-1}>¡Tu voto fue registrado correctamente!</h2>
-        <p>Gracias por participar en la elección.</p>
+        <h2 ref={title} tabIndex={-1}>¡Voto registrado!</h2>
         <dl className="confirmation-summary">
           {receipt.name && <div><dt>Alumno</dt><dd>{receipt.name}</dd></div>}
           <div><dt>Fecha y hora de Lima</dt><dd>{formatDate(receipt.date)}</dd></div>
@@ -178,47 +162,42 @@ export function Ballot() {
         <div className="section-head">
           <span className="feature-icon">{choosing ? <Vote size={24}/> : <ContactRound size={24}/>}</span>
           <div>
-            <p className="overline">PASO {choosing ? '02' : '01'} DE 03</p>
-            <h2 ref={title} tabIndex={-1}>{choosing ? 'Elige a tu profesor' : 'Ingresa tu DNI'}</h2>
+            <h2 ref={title} tabIndex={-1}>{choosing ? 'Elige tu candidato' : 'Ingresa tu DNI'}</h2>
           </div>
         </div>
         {choosing && verification ? <>
           {participant && <div className="verified"><BadgeCheck size={19}/> {participant}</div>}
           <fieldset className="professor-fieldset">
-            <legend>Selecciona un candidato.</legend>
+            <legend className="sr-only">Candidatos</legend>
             {voteError && <Notice message={voteError}/>}
             {!election.profesores.length && <p className="hint">Aún no hay candidatos disponibles.</p>}
             <div className="professor-grid">
               {election.profesores.map((professor, index) => <label key={professor.id} className="professor-option">
                 <input type="radio" name="profesor" checked={selected === professor.id} onChange={() => setSelected(professor.id)}/>
                 {professor.fotoUrl ? <img className="candidate-photo" src={professor.fotoUrl} alt=""/>
-                  : <span className="professor-avatar" data-tone={index % 4}><GraduationCap size={23}/></span>}
+                  : <span className="professor-avatar" data-tone={index % 4}><UserRound size={28}/></span>}
                 <span className="professor-name">{professor.nombre}</span>
               </label>)}
             </div>
           </fieldset>
           <div className="ballot-actions">
-            <button className="button text-button" onClick={() => {resetIdentity(''); focusTitle();}}><ArrowLeft size={17}/> Cambiar DNI</button>
+            <button className="button secondary" onClick={() => {resetIdentity(''); focusTitle();}}><ArrowLeft size={17}/> Cambiar DNI</button>
             <button className="button primary" disabled={!active} onClick={() => {setVoteError(''); setModal(true);}}>
-              Continuar y confirmar <ArrowRight size={17}/>
+              <Vote size={21}/> Revisar mi voto
             </button>
           </div>
         </> : <form onSubmit={event => {event.preventDefault(); void continueToBallot();}}>
-          <p className="section-description">{election.soloDni ? 'El DNI se usa para permitir un solo voto por número.' : 'Ingresa tu Documento Nacional de Identidad para consultar tus datos.'}</p>
-          <label className="field-label" htmlFor="dni">Ingrese su DNI</label>
-          <div className="dni-field">
-            <input id="dni" disabled={checkingDetails} ref={input} value={dni} inputMode="numeric" autoComplete="off" placeholder="00000000"
+          <label className="sr-only" htmlFor="dni">Ingresa tu DNI</label>
+          <input className="ballot-dni" id="dni" disabled={checkingDetails} ref={input} value={dni} inputMode="numeric" autoComplete="off" placeholder="00000000"
               aria-describedby="dni-hint" aria-invalid={Boolean(lookupError && dni.length === 8)}
               onChange={event => {
                 const value = event.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 8);
                 if (value !== dni) resetIdentity(value);
               }}/>
-            <span aria-hidden>{dni.length} / 8</span>
-          </div>
-          <p className="hint" id="dni-hint">Escribe los 8 dígitos de tu DNI.</p>
+          <p className="hint" id="dni-hint">8 dígitos</p>
           {election.buscarPorNombre && !verification && !manual && <>
-            <button type="button" className="button text-button" aria-expanded={showNameLookup}
-              onClick={() => setShowNameLookup(value => !value)}>Buscar mi DNI por nombre</button>
+            <button type="button" className="button secondary lookup-button" aria-expanded={showNameLookup}
+              onClick={() => setShowNameLookup(value => !value)}><Search size={21}/> Buscar por nombre</button>
             {showNameLookup && <NameLookup onFound={resetIdentity}/>}
           </>}
           {waiting && <p className="status" role="status"><LoaderCircle className="spin" size={17}/> {election.soloDni ? 'Comprobando si el DNI ya votó…' : 'Consultando DNI...'}</p>}
@@ -247,19 +226,9 @@ export function Ballot() {
             </div>
           </div>}
           <button className="button primary continue" type="submit" disabled={checkingDetails || (!verification && (!manual || !details.nombres.trim() || !details.apellidoPaterno.trim()))}>
-            {checkingDetails ? 'Comprobando matrícula…' : 'Continuar a la selección'} <ArrowRight size={18}/></button>
+            {checkingDetails ? 'Comprobando matrícula…' : 'Continuar'} <ArrowRight size={18}/></button>
         </form>}
       </section>}
-      <aside className="guide">
-        <span className="guide-icon"><ShieldCheck size={26}/></span>
-        <p className="overline">GUÍA DE PARTICIPACIÓN</p>
-        <h2>Antes de votar</h2>
-        <ul>
-          <li><Check size={17}/> Se permite un voto por DNI.</li>
-          <li><Check size={17}/> Puedes cambiar de opción antes de confirmar.</li>
-          <li><Check size={17}/> Los datos del voto son visibles para la administración autorizada.</li>
-        </ul>
-      </aside>
     </div>}
     {modal && verification && active && <Confirmation student={participant} professor={active.nombre}
       busy={saving} error={voteError} onClose={() => setModal(false)} onConfirm={submitVote}/>}

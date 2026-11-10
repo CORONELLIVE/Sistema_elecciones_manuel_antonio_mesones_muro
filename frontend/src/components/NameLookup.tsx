@@ -24,8 +24,8 @@ export function NameLookup({onFound}: {onFound: (dni: string) => void}) {
   }, [complete, names, onFound]);
 
   return <fieldset className="student-data">
-    <legend>Búsqueda por nombre completo</legend>
-    <p className="hint">Escribe tus nombres y apellidos. Puedes usar mayúsculas o minúsculas, con o sin tildes.</p>
+    <legend>Nombre completo</legend>
+    <p className="hint">Puedes escribir con o sin tildes.</p>
     {fields.map(([field, label]) => <label key={field}>{label}
       <input value={names[field]} maxLength={field === 'nombres' ? 120 : 100} onChange={event => {
         setMessage('');

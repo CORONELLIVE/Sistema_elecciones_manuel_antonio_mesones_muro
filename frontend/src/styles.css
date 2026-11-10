@@ -2,7 +2,7 @@
 
 :root {
   color: #352128;
-  background: #fbf6f1;
+  background: #fff5c7;
   font-family: "Segoe UI", system-ui, sans-serif;
   font-synthesis: none;
   --ink: #391c25;
@@ -15,39 +15,38 @@ body { margin: 0; min-width: 280px; }
 #root { min-height: 100dvh; display: flex; flex-direction: column; }
 .frame { width: min(1100px, calc(100% - 48px)); margin-inline: auto; }
 .site-header { background: var(--navy); color: #fff; border-bottom: 4px solid #ffdf32; }
-.header-inner, .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.header-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .header-inner { min-height: 73px; }
-.brand, .header-link, .footer-inner span:last-child { display: inline-flex; align-items: center; gap: 10px; }
+.brand, .header-link { display: inline-flex; align-items: center; gap: 10px; }
 .brand strong, .brand small { display: block; }
 .brand strong { font-size: 16px; letter-spacing: -.015em; }
 .brand small { font-size: 9px; letter-spacing: .16em; color: #ffe36a; margin-top: 2px; }
-.brand-icon, .feature-icon, .guide-icon, .professor-avatar { display: grid; place-items: center; flex: none; border-radius: 12px; }
-.brand-icon { width: 42px; height: 42px; background: #294677; color: #fff7dd; }
+.brand-icon, .feature-icon, .professor-avatar { display: grid; place-items: center; flex: none; border-radius: 12px; }
+
 .header-link { border: 1px solid #b2576a; border-radius: 9px; padding: 8px 12px; font-size: 13px; color: #fff7dd; }
 .header-link:hover { background: #8d1d32; }
 .main-content { flex: 1; padding-bottom: 50px; }
-.site-footer { border-top: 1px solid var(--line); color: var(--muted); background: #f8efe9; font-size: 12px; }
-.footer-inner { min-height: 56px; }
+
+
 .hero { text-align: center; padding: 46px 0 27px; }
 .eyebrow, .overline { color: var(--blue); font-weight: 750; font-size: 11px; letter-spacing: .13em; line-height: 1.4; }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; }
-.hero .eyebrow { border: 1px solid #ebd983; background: #fff3c3; padding: 7px 11px; border-radius: 999px; }
 h1, h2 { margin: 0; font-weight: 750; letter-spacing: -.038em; line-height: 1.14; color: var(--ink); overflow-wrap: anywhere; }
 h1 { font-size: clamp(34px, 6vw, 54px); }
 h2 { font-size: clamp(23px, 4vw, 29px); }
-.hero h1 { margin: 13px 0 9px; }
+.hero h1 { max-width: 740px; margin-inline: auto; text-wrap: balance; }
 .hero p, .section-description, .hint, .success > p, .admin-login > p:not(.overline), .admin-head p:not(.eyebrow), .results-head p:not(.overline) { color: var(--muted); }
-.progress { display: flex; justify-content: center; margin: 0 auto 26px; gap: 13px; padding: 0; list-style: none; }
-.progress li { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 650; }
-.progress .reached { color: var(--blue); }
-.step-number { width: 28px; height: 28px; display: grid; place-items: center; background: #e7edf6; border-radius: 50%; }
-.reached .step-number { background: #ffe88a; }
-.progress [aria-current] .step-number { background: var(--blue); color: white; }
-.step-arrow { color: #8b9cb5; }
+
+
+
+
+
+
+
 .demo-banner, .privacy { display: flex; align-items: flex-start; gap: 9px; border: 1px solid #d6e2f8; background: #eaf1fe; color: #274777; padding: 11px 15px; border-radius: 11px; font-size: 13px; }
 .demo-banner { margin: 0 auto 16px; max-width: 930px; }
 .demo-banner svg, .privacy svg { flex: none; margin-top: 1px; }
-.ballot-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .47fr); gap: 18px; align-items: start; max-width: 930px; margin: auto; }
+.ballot-layout { width: min(100%, 760px); margin-inline: auto; }
 .panel { background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px #1b366608; }
 .padded, .ballot-panel, .success, .admin-login, .results-panel, .table-panel { padding: clamp(18px, 4vw, 30px); }
 .section-head { display: flex; gap: 13px; align-items: center; margin-bottom: 17px; }
@@ -60,10 +59,10 @@ input:not([type=radio]), select {
   color: var(--ink); border-radius: 9px; padding: 11px 13px; font: inherit;
 }
 input[readonly] { background: #f4f7fc; font-weight: 650; font-size: 13px; margin-top: 4px; }
-.dni-field { position: relative; }
-.dni-field input { padding-right: 66px; font-size: 20px; font-weight: 700; letter-spacing: .16em; }
-.dni-field input::placeholder { color: #8393ac; }
-.dni-field span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 12px; }
+
+
+
+
 .hint { font-size: 12px; margin-top: 6px; }
 .button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 43px;
@@ -79,13 +78,13 @@ input[readonly] { background: #f4f7fc; font-weight: 650; font-size: 13px; margin
 .secondary:disabled { opacity: .55; }
 .text-button { color: var(--blue); padding-inline: 0; }
 .continue { width: 100%; margin-top: 19px; }
-.guide { background: var(--navy); color: #e4edfb; border-radius: 18px; padding: 24px; }
-.guide-icon { width: 47px; height: 47px; background: #85172c; color: #ffe36a; margin-bottom: 17px; }
-.guide .overline { color: #ffe36a; }
-.guide h2 { color: white; margin: 5px 0 15px; }
-.guide ul { display: grid; gap: 13px; list-style: none; padding: 0; }
-.guide li { display: flex; gap: 9px; font-size: 13px; line-height: 1.5; }
-.guide li svg { flex: none; color: #ffdf32; margin-top: 2px; }
+
+
+
+
+
+
+
 .status, .verified { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: #28518a; }
 .verified { color: #146650; margin: 0 0 10px; font-weight: 700; }
 .student-data { margin-top: 14px; padding: 13px; background: #f9fbfe; border: 1px solid var(--line); border-radius: 10px; }
@@ -160,7 +159,6 @@ tbody tr + tr { border-top: 1px solid var(--line); }
 @keyframes rise { from { opacity: 0; transform: translateY(8px) scale(.94); } }
 
 @media (max-width: 740px) {
-  .ballot-layout { grid-template-columns: 1fr; }
   .hero { padding-top: 29px; }
   .metric-grid, .results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -168,13 +166,13 @@ tbody tr + tr { border-top: 1px solid var(--line); }
   .frame { width: calc(100% - 24px); }
   .header-link { padding: 7px; font-size: 11px; }
   .brand { gap: 6px; }
-  .brand-icon { width: 32px; height: 35px; }
+
   .brand strong { font-size: 13px; }
   .brand small { font-size: 8px; }
-  .footer-inner { flex-wrap: wrap; gap: 5px; padding: 10px 0; }
-  .progress { gap: 8px; }
-  .progress li { flex-direction: column; font-size: 11px; gap: 4px; flex: 1; }
-  .step-arrow { display: none; }
+
+
+
+
   .professor-avatar { width: 26px; height: 29px; }
   .professor-avatar svg { width: 17px; }
   .dialog-actions > .button, .ballot-actions > .button { width: 100%; }
@@ -200,3 +198,22 @@ tbody tr + tr { border-top: 1px solid var(--line); }
 .election-history { margin-top: 12px; }
 .election-history summary { cursor: pointer; font-weight: 700; }
 .election-history li { justify-content: space-between; }
+
+
+.ballot-screen .section-head h2, .ballot-screen .success h2 { font-size: clamp(28px, 5vw, 42px); }
+.ballot-screen .button, .confirmation .button { min-height: 54px; font-size: clamp(16px, 2.6vw, 19px); padding: 10px 18px; }
+.ballot-screen .hint, .ballot-screen .status, .ballot-screen .notice,
+.ballot-screen .student-data label, .ballot-screen .student-data input,
+.ballot-screen .verified, .confirmation-summary dd { font-size: 16px; }
+.ballot-screen input.ballot-dni { padding: 15px 16px; font-size: clamp(26px, 5vw, 38px); font-weight: 750; letter-spacing: .12em; border-color: #d6bc68; }
+.ballot-screen input.ballot-dni::placeholder { color: #746763; }
+.lookup-button { margin-top: 16px; }
+.ballot-screen .professor-grid { gap: 16px; }
+.ballot-screen .professor-option { min-height: 88px; padding: 12px; gap: 12px; }
+.ballot-screen .professor-name { font-size: clamp(17px, 3vw, 22px); }
+.ballot-screen .candidate-photo, .ballot-screen .professor-avatar { width: 58px; height: 58px; }
+.ballot-screen .professor-option input { width: 18px; height: 18px; }
+.ballot-screen .ballot-actions, .confirmation .dialog-actions { gap: 14px; }
+@media (max-width: 540px) {
+  .ballot-screen .professor-grid { grid-template-columns: 1fr; }
+}

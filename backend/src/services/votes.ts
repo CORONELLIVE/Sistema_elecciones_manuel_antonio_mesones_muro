@@ -24,7 +24,7 @@ const archivedSchema = electionSchema.extend({
 });
 const votesSchema = z.strictObject({
   votos: voteList,
-  eleccion: electionSchema.default({id: 1, nombre: 'Elección de Profesores'}),
+  eleccion: electionSchema.default({id: 1, nombre: 'Elecciones del Municipio Escolar 2026'}),
   historial: z.array(archivedSchema).default([]),
 });
 type Votes = z.infer<typeof votesSchema>;
@@ -101,7 +101,7 @@ export function makeVoteStore(file: string, secret: string, professors: {has(id:
       return serialize(async () => {
         const data = await read();
         if (electionId !== data.eleccion.id) throw new HttpError(409, 'ELECCION_CAMBIO', 'Empezó otra votación. Identifícate nuevamente para participar.');
-        if (!professors.isActive(professorId)) throw new HttpError(400, 'PROFESOR_INVALIDO', 'Selecciona un profesor válido.');
+        if (!professors.isActive(professorId)) throw new HttpError(400, 'PROFESOR_INVALIDO', 'Selecciona un candidato válido.');
         if (data.votos.some(vote => vote.dniHash === hash || (studentKey !== undefined && vote.studentKey === studentKey))) throw duplicateVote();
         const vote = {...names, id: randomUUID(), dniHash: hash, profesorId: professorId, fechaVoto: new Date().toISOString()};
         data.votos.push({...vote, ...(dni && {dniCifrado: encryptDni(dni)}), ...(studentKey && {studentKey})});

@@ -1,18 +1,18 @@
 [
   {
     "id": 1,
-    "nombre": "Profesor 1"
+    "nombre": "Candidato 1"
   },
   {
     "id": 2,
-    "nombre": "Profesor 2"
+    "nombre": "Candidato 2"
   },
   {
     "id": 3,
-    "nombre": "Profesor 3"
+    "nombre": "Candidato 3"
   },
   {
     "id": 4,
-    "nombre": "Profesor 4"
+    "nombre": "Candidato 4"
   }
 ]

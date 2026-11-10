@@ -119,7 +119,7 @@ export function Admin() {
   return <Shell admin>
     <div className="admin-head">
       <div>
-        <p className="eyebrow"><Vote size={16}/> ELECCIÓN DE PROFESORES</p>
+        <p className="eyebrow"><Vote size={16}/> MUNICIPIO ESCOLAR 2026</p>
         <h1>Resultados de la votación</h1>
         <p>Consulta la participación y el detalle de los votos registrados.</p>
       </div>
@@ -146,7 +146,7 @@ export function Admin() {
         {[
           {label: 'Votos registrados', value: data.total, Icon: Vote},
           {label: 'Alumnos participantes', value: data.participantes, Icon: UsersRound},
-          {label: data.lideres.length > 1 ? 'Empate en primer lugar' : 'Profesor con más votos', value: data.lideres.join(', ') || 'Sin votos', Icon: Trophy},
+          {label: data.lideres.length > 1 ? 'Empate en primer lugar' : 'Candidato con más votos', value: data.lideres.join(', ') || 'Sin votos', Icon: Trophy},
           {label: 'Última votación · Lima', value: data.ultimoVoto ? formatDate(data.ultimoVoto) : 'Sin registros', Icon: Clock3},
         ].map(({label, value, Icon}) => <div className="panel metric" key={label}>
           <Icon size={20}/><span>{label}</span><strong>{value}</strong>
@@ -154,7 +154,7 @@ export function Admin() {
       </div>
       <section className="panel results-panel">
         <div className="results-head">
-          <div><p className="overline">DISTRIBUCIÓN DE VOTOS</p><h2>Resultados por profesor</h2></div>
+          <div><p className="overline">DISTRIBUCIÓN DE VOTOS</p><h2>Resultados por candidato</h2></div>
           <span className="live"><span/> Actualización cada 5 s</span>
         </div>
         <div className="results-grid">
@@ -179,16 +179,16 @@ export function Admin() {
             <input type="search" placeholder="Nombres o apellidos" value={query} maxLength={150}
               onChange={event => {setQuery(event.target.value); setPage(1);}}/>
           </span></label>
-          <label><span className="field-label">Filtrar por profesor</span>
+          <label><span className="field-label">Filtrar por candidato</span>
             <select value={professor} onChange={event => selectProfessor(event.target.value)}>
-              <option value="">Todos los profesores</option>
+              <option value="">Todos los candidatos</option>
               {data.resultados.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
             </select>
           </label>
         </div>
         <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabla de votos">
           <table>
-            <thead><tr><th scope="col">N.º</th><th scope="col">Alumno</th><th scope="col">Profesor seleccionado</th><th scope="col">Fecha y hora · Lima</th></tr></thead>
+            <thead><tr><th scope="col">N.º</th><th scope="col">Alumno</th><th scope="col">Candidato seleccionado</th><th scope="col">Fecha y hora · Lima</th></tr></thead>
             <tbody>
               {data.registros.map(row => <tr key={row.numero}>
                 <td>{row.numero}</td><td>{row.alumno || 'Sin nombre registrado'}</td><td>{names.get(row.profesorId)}</td><td>{formatDate(row.fechaVoto)}</td>

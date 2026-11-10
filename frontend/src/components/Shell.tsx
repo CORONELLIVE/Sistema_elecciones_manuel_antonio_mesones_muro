@@ -1,8 +1,8 @@
 import type {ReactNode} from 'react';
-import {ArrowLeft, LockKeyhole, ShieldCheck} from 'lucide-react';
+import {ArrowLeft, LockKeyhole} from 'lucide-react';
 import logo from '../assets/escudo-colegio.png';
 
-export function Shell({children, admin = false}: {children: ReactNode; admin?: boolean}) {
+export function Shell({children, admin = false, ballot = false}: {children: ReactNode; admin?: boolean; ballot?: boolean}) {
   return <>
     <header className="site-header">
       <div className="frame header-inner">
@@ -16,13 +16,7 @@ export function Shell({children, admin = false}: {children: ReactNode; admin?: b
         </a>
       </div>
     </header>
-    <main className="frame main-content">{children}</main>
-    <footer className="site-footer">
-      <div className="frame footer-inner">
-        <span>Sistema de Votaciones · Elección de Profesores</span>
-        <span><ShieldCheck size={16}/> Acceso administrativo protegido</span>
-      </div>
-    </footer>
+    <main className={ballot ? 'frame main-content ballot-screen' : 'frame main-content'}>{children}</main>
   </>;
 }
 
