@@ -272,3 +272,21 @@ tbody tr + tr { border-top: 1px solid var(--line); }
 .election-stats > div { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 4px; padding: 10px; border: 1px solid #ffffff55; border-radius: 10px; background: #30101e66; }
 .election-stats dd { font-size: clamp(22px, 3vw, 34px); font-weight: 800; line-height: 1; }
 .election-stats dt { font-size: clamp(12px, 1.4vw, 15px); line-height: 1.2; overflow-wrap: anywhere; }
+
+.admin-workspace { display: grid; grid-template-columns: 215px minmax(0, 1fr); gap: 22px; align-items: start; }
+.admin-menu { position: sticky; top: 16px; display: grid; gap: 5px; padding: 9px; }
+.admin-menu button {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 9px 11px;
+  border: 1px solid transparent; border-radius: 9px; text-align: left; font-size: 14px;
+  font-weight: 650; cursor: pointer; color: var(--ink);
+}
+.admin-menu button svg { flex: none; }
+.admin-menu button:hover { background: #fff5df; }
+.admin-menu button[aria-current="page"] { color: var(--blue); background: #fff1c3; border-color: #e7cc76; }
+.admin-section { min-width: 0; }
+.admin-section .results-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr)); }
+.admin-section .metric-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); }
+@media (max-width: 720px) {
+  .admin-workspace { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .admin-menu { position: static; grid-template-columns: repeat(auto-fit, minmax(min(100%, 142px), 1fr)); }
+}

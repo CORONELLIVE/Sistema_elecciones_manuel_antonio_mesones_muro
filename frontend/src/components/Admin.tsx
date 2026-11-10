@@ -1,5 +1,5 @@
 import {useEffect, useState, type FormEvent} from 'react';
-import {ArrowDown, ChevronLeft, ChevronRight, Clock3, Info, LoaderCircle, LockKeyhole, LogOut, Search, Trophy, UsersRound, Vote} from 'lucide-react';
+import {ArrowRight, BarChart3, ClipboardList, ContactRound, ChevronLeft, ChevronRight, Clock3, Info, LoaderCircle, LockKeyhole, LogOut, Search, Trophy, UsersRound, Vote} from 'lucide-react';
 import {api, ApiError, formatDate, type Professor} from '../api';
 import {ElectionPanel, type ElectionSummary, type ArchivedElection} from './ElectionPanel';
 import {RosterPanel} from './RosterPanel';
@@ -18,7 +18,17 @@ type Dashboard = {
 const percent = new Intl.NumberFormat('es-PE', {maximumFractionDigits: 1});
 const percentage = (value: number) => percent.format(value) + '%';
 
+const adminSections = [
+  {id: 'resultados', label: 'Resultados', icon: BarChart3},
+  {id: 'registro', label: 'Registro de votos', icon: ClipboardList},
+  {id: 'votaciones', label: 'Votaciones', icon: Vote},
+  {id: 'candidatos', label: 'Candidatos', icon: ContactRound},
+  {id: 'padron', label: 'Padrón', icon: UsersRound},
+] as const;
+type AdminSection = (typeof adminSections)[number]['id'];
+
 export function Admin() {
+  const [section, setSection] = useState<AdminSection>('resultados');
   const [session, setSession] = useState<'checking' | 'login' | 'active'>('checking');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -81,6 +91,7 @@ export function Admin() {
     try {
       await api('/admin/logout', {body: {}});
       setSession('login');
+      setSection('resultados');
       setData(undefined);
       setQuery('');
       setProfessor('');
@@ -121,8 +132,7 @@ export function Admin() {
     <div className="admin-head">
       <div>
         <p className="eyebrow"><Vote size={16}/> MUNICIPIO ESCOLAR 2026</p>
-        <h1>Resultados de la votación</h1>
-        <p>Consulta la participación y el detalle de los votos registrados.</p>
+        <h1>Panel administrativo</h1>
       </div>
       {session === 'active' && <button className="button secondary" disabled={busy} onClick={logout}><LogOut size={17}/> Cerrar sesión</button>}
     </div>
@@ -131,82 +141,88 @@ export function Admin() {
       <button className="button text-button" onClick={() => setAttempt(attempt + 1)}>Actualizar resultados</button>
     </div>}
     {!data && !error && <p className="status" role="status"><LoaderCircle className="spin" size={18}/> Cargando resultados…</p>}
-    {data && <>
-      <div className="privacy"><Info size={19}/><p><strong>Privacidad.</strong> Este sistema registra votos identificables y no constituye una votación secreta.</p></div>
-      <ElectionPanel current={data.eleccion} history={data.historial} total={data.total} onChange={() => {
-        setProfessor('');
-        setPage(1);
-        setAttempt(value => value + 1);
-      }}/>
-      <RosterPanel/>
-      <CandidatePanel candidates={data.candidatos} onChange={() => {
-        setProfessor('');
-        setPage(1);
-        setAttempt(value => value + 1);
-      }}/>
-      <div className="metric-grid">
-        {[
-          {label: 'Votos registrados', value: data.total, Icon: Vote},
-          {label: 'Alumnos participantes', value: data.participantes, Icon: UsersRound},
-          {label: data.lideres.length > 1 ? 'Empate en primer lugar' : 'Candidato con más votos', value: data.lideres.join(', ') || 'Sin votos', Icon: Trophy},
-          {label: 'Última votación · Lima', value: data.ultimoVoto ? formatDate(data.ultimoVoto) : 'Sin registros', Icon: Clock3},
-        ].map(({label, value, Icon}) => <div className="panel metric" key={label}>
-          <Icon size={20}/><span>{label}</span><strong>{value}</strong>
-        </div>)}
+    {data && <div className="admin-workspace">
+      <nav className="panel admin-menu" aria-label="Secciones del panel administrativo">
+        {adminSections.map(({id, label, icon: Icon}) => <button key={id} type="button"
+          aria-current={section === id ? 'page' : undefined} onClick={() => setSection(id)}>
+          <Icon size={19} aria-hidden="true"/> {label}
+        </button>)}
+      </nav>
+      <div className="admin-section" aria-label={adminSections.find(item => item.id === section)?.label}>
+        {section === 'votaciones' && <ElectionPanel current={data.eleccion} history={data.historial} total={data.total}
+          onChange={() => {selectProfessor(''); setAttempt(value => value + 1);}}/>}
+        {section === 'padron' && <RosterPanel/>}
+        {section === 'candidatos' && <CandidatePanel candidates={data.candidatos}
+          onChange={() => {selectProfessor(''); setAttempt(value => value + 1);}}/>}
+        {section === 'resultados' && <>
+          <div className="metric-grid">
+            {[
+              {label: 'Votos registrados', value: data.total, Icon: Vote},
+              {label: 'Alumnos participantes', value: data.participantes, Icon: UsersRound},
+              {label: data.lideres.length > 1 ? 'Empate en primer lugar' : 'Candidato con más votos', value: data.lideres.join(', ') || 'Sin votos', Icon: Trophy},
+              {label: 'Última votación · Lima', value: data.ultimoVoto ? formatDate(data.ultimoVoto) : 'Sin registros', Icon: Clock3},
+            ].map(({label, value, Icon}) => <div className="panel metric" key={label}>
+              <Icon size={20}/><span>{label}</span><strong>{value}</strong>
+            </div>)}
+          </div>
+          <section className="panel results-panel">
+            <div className="results-head">
+              <div><p className="overline">DISTRIBUCIÓN DE VOTOS</p><h2>Resultados por candidato</h2></div>
+              <span className="live"><span/> Actualización cada 5 s</span>
+            </div>
+            <div className="results-grid">
+              {data.resultados.map((item, index) => <button key={item.id} className="result-card"
+                onClick={() => {selectProfessor(String(item.id)); setSection('registro');}}>
+                <span className="result-name">{item.fotoUrl && <img className="result-photo" src={item.fotoUrl} alt=""/>}<span>{item.nombre}{item.retirado && ' (retirado)'}</span><ArrowRight size={15}/></span>
+                <span className="result-count">{item.votos} <small>{item.votos === 1 ? 'voto' : 'votos'}</small></span>
+                <span className="result-chart"><progress data-tone={index % 4} max={100} value={item.porcentaje} aria-label={'Porcentaje de ' + item.nombre}/><span>{percentage(item.porcentaje)}</span></span>
+              </button>)}
+            </div>
+          </section>
+        </>}
+        {section === 'registro' && <>
+          <div className="privacy"><Info size={19}/><p><strong>Privacidad.</strong> Este sistema registra votos identificables y no constituye una votación secreta.</p></div>
+          <section className="panel table-panel" aria-labelledby="registry-title">
+            <div className="results-head">
+              <div>
+                <p className="overline">REGISTRO DE PARTICIPACIÓN</p>
+                <h2 id="registry-title">{detail ? 'Detalle de ' + detail.nombre : 'Alumnos que votaron'}</h2>
+                {detail && <p>{detail.votos} {detail.votos === 1 ? 'voto' : 'votos'} · {percentage(detail.porcentaje)} del total</p>}
+              </div>
+            </div>
+            <div className="filters">
+              <label><span className="field-label">Buscar alumno</span><span className="search-field"><Search size={18}/>
+                <input type="search" placeholder="Nombres o apellidos" value={query} maxLength={150}
+                  onChange={event => {setQuery(event.target.value); setPage(1);}}/>
+              </span></label>
+              <label><span className="field-label">Filtrar por candidato</span>
+                <select value={professor} onChange={event => selectProfessor(event.target.value)}>
+                  <option value="">Todos los candidatos</option>
+                  {data.resultados.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabla de votos">
+              <table>
+                <thead><tr><th scope="col">N.º</th><th scope="col">Alumno</th><th scope="col">Candidato seleccionado</th><th scope="col">Fecha y hora · Lima</th></tr></thead>
+                <tbody>
+                  {data.registros.map(row => <tr key={row.numero}>
+                    <td>{row.numero}</td><td>{row.alumno || 'Sin nombre registrado'}</td><td>{names.get(row.profesorId)}</td><td>{formatDate(row.fechaVoto)}</td>
+                  </tr>)}
+                  {!data.registros.length && <tr><td colSpan={4} className="empty">No hay registros para mostrar.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="pagination">
+              <span>{data.coincidencias} {data.coincidencias === 1 ? 'registro' : 'registros'} · Página {data.pagina} de {data.paginas}</span>
+              <div>
+                <button className="button secondary" aria-label="Página anterior" disabled={data.pagina <= 1} onClick={() => setPage(data.pagina - 1)}><ChevronLeft size={18}/></button>
+                <button className="button secondary" aria-label="Página siguiente" disabled={data.pagina >= data.paginas} onClick={() => setPage(data.pagina + 1)}><ChevronRight size={18}/></button>
+              </div>
+            </div>
+          </section>
+        </>}
       </div>
-      <section className="panel results-panel">
-        <div className="results-head">
-          <div><p className="overline">DISTRIBUCIÓN DE VOTOS</p><h2>Resultados por candidato</h2></div>
-          <span className="live"><span/> Actualización cada 5 s</span>
-        </div>
-        <div className="results-grid">
-          {data.resultados.map((item, index) => <button key={item.id} className="result-card"
-            aria-pressed={String(item.id) === professor} onClick={() => selectProfessor(professor === String(item.id) ? '' : String(item.id))}>
-            <span className="result-name">{item.fotoUrl && <img className="result-photo" src={item.fotoUrl} alt=""/>}<span>{item.nombre}{item.retirado && ' (retirado)'}</span><ArrowDown size={15}/></span>
-            <span className="result-count">{item.votos} <small>{item.votos === 1 ? 'voto' : 'votos'}</small></span>
-            <span className="result-chart"><progress data-tone={index % 4} max={100} value={item.porcentaje} aria-label={'Porcentaje de ' + item.nombre}/><span>{percentage(item.porcentaje)}</span></span>
-          </button>)}
-        </div>
-      </section>
-      <section className="panel table-panel" aria-labelledby="registry-title">
-        <div className="results-head">
-          <div>
-            <p className="overline">REGISTRO DE PARTICIPACIÓN</p>
-            <h2 id="registry-title">{detail ? 'Detalle de ' + detail.nombre : 'Alumnos que votaron'}</h2>
-            {detail && <p>{detail.votos} {detail.votos === 1 ? 'voto' : 'votos'} · {percentage(detail.porcentaje)} del total</p>}
-          </div>
-        </div>
-        <div className="filters">
-          <label><span className="field-label">Buscar alumno</span><span className="search-field"><Search size={18}/>
-            <input type="search" placeholder="Nombres o apellidos" value={query} maxLength={150}
-              onChange={event => {setQuery(event.target.value); setPage(1);}}/>
-          </span></label>
-          <label><span className="field-label">Filtrar por candidato</span>
-            <select value={professor} onChange={event => selectProfessor(event.target.value)}>
-              <option value="">Todos los candidatos</option>
-              {data.resultados.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="table-scroll" tabIndex={0} role="region" aria-label="Tabla de votos">
-          <table>
-            <thead><tr><th scope="col">N.º</th><th scope="col">Alumno</th><th scope="col">Candidato seleccionado</th><th scope="col">Fecha y hora · Lima</th></tr></thead>
-            <tbody>
-              {data.registros.map(row => <tr key={row.numero}>
-                <td>{row.numero}</td><td>{row.alumno || 'Sin nombre registrado'}</td><td>{names.get(row.profesorId)}</td><td>{formatDate(row.fechaVoto)}</td>
-              </tr>)}
-              {!data.registros.length && <tr><td colSpan={4} className="empty">No hay registros para mostrar.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-        <div className="pagination">
-          <span>{data.coincidencias} {data.coincidencias === 1 ? 'registro' : 'registros'} · Página {data.pagina} de {data.paginas}</span>
-          <div>
-            <button className="button secondary" aria-label="Página anterior" disabled={data.pagina <= 1} onClick={() => setPage(data.pagina - 1)}><ChevronLeft size={18}/></button>
-            <button className="button secondary" aria-label="Página siguiente" disabled={data.pagina >= data.paginas} onClick={() => setPage(data.pagina + 1)}><ChevronRight size={18}/></button>
-          </div>
-        </div>
-      </section>
-    </>}
+    </div>}
   </Shell>;
 }
