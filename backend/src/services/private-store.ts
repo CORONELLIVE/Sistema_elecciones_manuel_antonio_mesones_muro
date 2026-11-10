@@ -4,7 +4,9 @@ import {HttpError} from '../errors.js';
 export async function privateSnapshot(path: string) {
   const result = await get(path, {access: 'private', useCache: false});
   if (!result || result.statusCode !== 200) return null;
-  return {data: JSON.parse(await new Response(result.stream).text()) as unknown, etag: result.blob.etag};
+  // Blob marks the ETag weak on compressed reads. Conditional writes use the stored object's ETag.
+  const etag = result.blob.etag.replace(/^W\//, '');
+  return {data: JSON.parse(await new Response(result.stream).text()) as unknown, etag};
 }
 
 export async function privateChange<State, Result>(
