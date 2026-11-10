@@ -1,0 +1,40 @@
+{
+  "name": "eleccion-profesores",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently -k -n API,WEB \"node --env-file-if-exists=.env --watch --import tsx backend/src/server.ts\" \"vite --config frontend/vite.config.ts\"",
+    "typecheck": "tsc -p frontend/tsconfig.json && tsc -p backend/tsconfig.json --noEmit",
+    "build": "tsc -p frontend/tsconfig.json && tsc -p backend/tsconfig.json && vite build --config frontend/vite.config.ts",
+    "start": "node --env-file-if-exists=.env backend/dist/server.js",
+    "importar:padron": "node --env-file-if-exists=.env --import tsx scripts/importar-padron.ts"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "lucide-react": "^0.468.0",
+    "pdfkit": "^0.20.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.15.0",
+    "@types/pdfkit": "^0.17.7",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.1.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.0"
+  }
+}
